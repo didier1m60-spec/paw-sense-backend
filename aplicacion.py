@@ -5,7 +5,7 @@ from typing import List, Optional
 import datetime
 import jwt
 import os
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
@@ -19,7 +19,6 @@ Base = declarative_base()
 # Seguridad
 SECRET_KEY = "paw_sense_secret_key_change_me"
 ALGORITHM = "HS256"
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 # --- MODELOS DE BASE DE DATOS (SQLAlchemy) ---
@@ -68,7 +67,7 @@ class PetResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# --- FUNCIONES DE AYUDA ---
+# --- FUNCIONES DE AYUDA (Encriptación directa con bcrypt) ---
 def get_db():
     db = SessionLocal()
     try:
@@ -77,10 +76,15 @@ def get_db():
         db.close()
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    password_bytes = plain_password.encode('utf-8')
+    hashed_bytes = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
@@ -136,7 +140,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 # 3. Registrar una nueva mascota
 @app.post("/pets", response_model=PetResponse, status_code=status.HTTP_201_CREATED)
-def create_pet(pet: PetCreate, current_user: UserDB = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_pet(pet: PetCreate, current_user: UserDB = Depends(current_user), db: Session = Depends(get_db)):
     new_pet = PetDB(
         user_id=current_user.id,
         name=pet.name,
