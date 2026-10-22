@@ -140,7 +140,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 # 3. Registrar una nueva mascota
 @app.post("/pets", response_model=PetResponse, status_code=status.HTTP_201_CREATED)
-def create_pet(pet: PetCreate, current_user: UserDB = Depends(current_user), db: Session = Depends(get_db)):
+def create_pet(pet: PetCreate, current_user: UserDB = Depends(get_current_user), db: Session = Depends(get_db)):
     new_pet = PetDB(
         user_id=current_user.id,
         name=pet.name,
