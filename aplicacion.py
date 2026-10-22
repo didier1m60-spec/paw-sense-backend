@@ -67,7 +67,18 @@ class PetResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# --- FUNCIONES DE AYUDA (Encriptación directa con bcrypt) ---
+# Esquema para recibir la telemetría desde Flutter / Dispositivo IoT
+class TelemetryData(BaseModel):
+    pet_name: Optional[str] = None
+    ax: float
+    ay: float
+    az: float
+    gx: float
+    gy: float
+    gz: float
+    bpm: int
+
+# --- FUNCIONES DE AYUDA ---
 def get_db():
     db = SessionLocal()
     try:
@@ -157,3 +168,20 @@ def create_pet(pet: PetCreate, current_user: UserDB = Depends(get_current_user),
 def get_user_pets(current_user: UserDB = Depends(get_current_user), db: Session = Depends(get_db)):
     pets = db.query(PetDB).filter(PetDB.user_id == current_user.id).all()
     return pets
+
+# 5. Endpoint de Predicción / Telemetría (¡Faltaba este!)
+@app.post("/predict")
+def predict_telemetry(data: TelemetryData, current_user: UserDB = Depends(get_current_user)):
+    # Lógica de Inteligencia Artificial / Reglas para detectar alerta de evacuación
+    # (Ejemplo basado en valores altos del eje X o ritmo cardíaco)
+    is_alert = data.ax > 5.0 or data.bpm > 100
+    
+    if is_alert:
+        message = f"¡Alerta! Comportamiento irregular detectado en {data.pet_name or 'la mascota'}."
+    else:
+        message = f"{data.pet_name or 'Mascota'} se encuentra en estado normal."
+
+    return {
+        "evacuation_alert": is_alert,
+        "message": message
+    }
