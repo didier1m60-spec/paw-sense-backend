@@ -35,8 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _statusMessage = "Monitoreando mascota...";
   bool _isLoading = false;
 
-  // Direccion IP de la red Wi-Fi local de tu PC
-  final String _apiUrl = "http://192.168.40.74:8000/predict";
+ // URL desplegada en Render:
+final String _apiUrl = "https://paw-sense-backend.onrender.com/predict";
 
   Future<void> _sendTelemetryToAI(double ax, double ay, double az, double gx, double gy, double gz, int bpm) async {
     setState(() {
